@@ -6,7 +6,7 @@ const db = mysql.createConnection({
   host: 'localhost', // Alamat host database
   user: 'root',      // Nama pengguna database
   password: '',      // Kata sandi untuk pengguna database (kosong dalam kasus ini)
-  database: 'perpustakaan' // Nama database yang digunakan (dianggap 'resto')
+  database: 'resto' // Nama database yang digunakan (dianggap 'resto')
 });
 
 // Membuat koneksi ke database
