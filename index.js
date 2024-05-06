@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const port = 3002;
 const bodyParser = require('body-parser');
-const db = require('./config.js'); // Menggunakan file konfigurasi database yang Anda berikan sebelumnya
+const db = require('./connection.js'); // Menggunakan file konfigurasi database yang Anda berikan sebelumnya
 const response = require('./response.js');
 
 // Middleware untuk parsing body dalam format JSON
