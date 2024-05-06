@@ -1,91 +1,107 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const db = require('./config.js'); // Import file konfigurasi database
 const app = express();
-const port = 3001;
-const response = require('./request.js'); // Import modul respons kustom
-// test
+const port = 3002;
+const bodyParser = require('body-parser');
+const db = require('./config.js'); // Menggunakan file konfigurasi database yang Anda berikan sebelumnya
+const response = require('./response.js');
+
 // Middleware untuk parsing body dalam format JSON
 app.use(bodyParser.json());
 
+// Endpoint untuk memberi pesan selamat datang
+app.get("/books", (req, res) => {
+  response(200, "welcome to api", "Selamat datang di api service", res);
+});
+
 // Endpoint untuk mendapatkan semua data buku
-app.get('/books', (req, res) => {
-    db.query('SELECT * FROM books', (error, result) => {
-        if (error) {
-            // Menangani kesalahan jika terjadi pada query
-            console.error(error);
-            response(500, null, "Internal Server Error", res);
-        } else {
-            // Mengirimkan hasil query sebagai respons
-            res.send(result);
-        }
-    });
+app.get("/", (req, res) => {
+  const sql = "SELECT * FROM books";
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      response(500, null, "Internal Server Error", res);
+    } else {
+      response(200, result, "get all data books", res);
+    }
+  });
 });
 
-// Endpoint untuk mendapatkan semua data kategori buku
-app.get('/categories', (req, res) => {
-    db.query('SELECT * FROM categories', (error, result) => {
-        if (error) {
-            // Menangani kesalahan jika terjadi pada query
-            console.error(error);
-            response(500, null, "Internal Server Error", res);
-        } else {
-            // Mengirimkan hasil query sebagai respons
-            res.send(result);
-        }
-    });
+// Endpoint untuk mendapatkan data buku berdasarkan ID
+app.get("/books/:id", (req, res) => {
+  const bookId = req.params.id;
+  const sql = `SELECT * FROM books WHERE id = ${bookId}`;
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      response(500, null, "Internal Server Error", res);
+    } else if (result.length === 0) {
+      response(404, null, "Book not found", res);
+    } else {
+      response(200, result[0], "get book by id", res);
+    }
+  });
 });
 
-// Endpoint untuk mendapatkan semua data penulis
-app.get('/authors', (req, res) => {
-    db.query('SELECT * FROM authors', (error, result) => {
-        if (error) {
-            // Menangani kesalahan jika terjadi pada query
-            console.error(error);
-            response(500, null, "Internal Server Error", res);
-        } else {
-            // Mengirimkan hasil query sebagai respons
-            res.send(result);
-        }
-    });
+// Endpoint untuk menambahkan data buku baru
+app.post("/books", (req, res) => {
+  const { title, author, category, user } = req.body;
+  const sql = `INSERT INTO books (title, author, category, user) VALUES ('${title}', '${author}', '${category}', '${user}')`;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      response(500, null, "Internal Server Error", res);
+    } else {
+      const data = {
+        isSuccess: result.affectedRows > 0,
+        book_id: result.insertId
+      };
+      response(200, data, "Book successfully added", res);
+    }
+  });
 });
 
-// Endpoint untuk mendapatkan semua data pengguna
-app.get('/users', (req, res) => {
-    db.query('SELECT * FROM users', (error, result) => {
-        if (error) {
-            // Menangani kesalahan jika terjadi pada query
-            console.error(error);
-            response(500, null, "Internal Server Error", res);
-        } else {
-            // Mengirimkan hasil query sebagai respons
-            res.send(result);
-        }
-    });
+// Endpoint untuk menghapus data buku berdasarkan ID
+app.delete("/books/:id", (req, res) => {
+  const bookId = req.params.id;
+  const sql = `DELETE FROM books WHERE id = ${bookId}`;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      response(500, null, "Internal Server Error", res);
+    } else if (result.affectedRows === 0) {
+      response(404, null, "Book not found", res);
+    } else {
+      const data = {
+        isSuccess: true
+      };
+      response(200, data, "Book successfully deleted", res);
+    }
+  });
 });
 
-// Endpoint untuk menambahkan data pengguna baru
-app.post('/users', (req, res) => {
-    const { username, email } = req.body;
-    const sql = `INSERT INTO users (username, email) VALUES ('${username}', '${email}')`;
+// Endpoint untuk mengubah data buku berdasarkan ID
+app.put("/books/:id", (req, res) => {
+  const bookId = req.params.id;
+  const { title, author, category, user } = req.body;
+  const sql = `UPDATE books SET title='${title}', author='${author}', category='${category}', user='${user}' WHERE id=${bookId}`;
 
-    db.query(sql, (error, result) => {
-        if (error) {
-            // Menangani kesalahan jika terjadi pada query
-            console.error(error);
-            response(500, null, "Internal Server Error", res);
-        } else {
-            // Menangani respons jika data berhasil ditambahkan
-            const data = {
-                isSuccess: result.affectedRows > 0, // Menggunakan result untuk mengecek jumlah baris yang terpengaruh
-                user_id: result.insertId
-            };
-            response(200, data, "Data berhasil disimpan", res);
-        }
-    });
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      response(500, null, "Internal Server Error", res);
+    } else if (result.affectedRows === 0) {
+      response(404, null, "Book not found", res);
+    } else {
+      const data = {
+        isSuccess: true
+      };
+      response(200, data, "Book successfully updated", res);
+    }
+  });
 });
 
-// Memulai server pada port yang ditentukan
 app.listen(port, () => {
-    console.log(`Running on port ${port}`);
+  console.log(`Running in port ${port}`);
 });
